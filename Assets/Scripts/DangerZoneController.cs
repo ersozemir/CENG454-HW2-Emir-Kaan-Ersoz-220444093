@@ -28,11 +28,11 @@ public class DangerZoneController : MonoBehaviour
         {
             timer += Time.deltaTime;
 
-            // Optional: Providing readability for the threat (Countdown)
+            // Providing readability for the threat (Countdown)
             int countdown = Mathf.CeilToInt(launchDelay - timer);
             if (countdown > 0)
             {
-                UpdateHUD("DANGER: Missile Launch in " + countdown, Color.yellow);
+                UpdateHUD("DANGER! Entered a Danger Zone: Missile Launch in " + countdown, Color.yellow);
             }
 
             if (timer >= launchDelay)
@@ -66,7 +66,7 @@ public class DangerZoneController : MonoBehaviour
 
     private void OnTriggerExit(Collider other)
     {
-        // Task 2 & 3: Resetting state upon leaving the zone
+        // Resetting state upon leaving the zone
         if (other.CompareTag(dangerZoneTag))
         {
             isPlayerInZone = false;

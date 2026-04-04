@@ -1,34 +1,87 @@
 using UnityEngine;
+using System.Collections;
 
 public class AircraftThreatHandler : MonoBehaviour
 {
-    [SerializeField] private Transform respawnPoint;
+    [Header("Respawn Settings")]
+    [SerializeField] private Transform respawnPoint; // Starting position
+
+    [Header("UI Elements")]
+    [SerializeField] private GameObject failureText; // Red message
+    [SerializeField] private GameObject successText; // Green message
+    [SerializeField] private GameObject statusText;  // The "Safe Zone" message
+
+    [Header("Audio")]
     [SerializeField] private AudioSource hitAudioSource;
-    [SerializeField] private DangerZoneController examManager;
 
     private Rigidbody rb;
+    private bool isMissionOver = false; 
 
     void Start()
     {
-        // TODO (Task 3-G): cache GetComponent<Rigidbody>() into 'rb'
+        // Get Rigidbody for physics control
         rb = GetComponent<Rigidbody>();
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        // TODO (Task 3-H): if the missile hits the aircraft, apply the chosen penalty
-        if (other.CompareTag("Missile")) // Füzenin tag'ini "Missile" yapmayı unutma!
+        if (isMissionOver) return;
+
+        //Hit by a missile
+        if (other.CompareTag("Missile"))
         {
-            if (hitAudioSource != null) hitAudioSource.Play();
+            StartCoroutine(HandleHitSequence());
+        }
 
-            // Penalty: Take the jet to the respawn point.
-            transform.position = respawnPoint.position;
-            transform.rotation = respawnPoint.rotation;
-            
-            // Make sure to reset the velocity of the jet to prevent it from flying away after respawn.
-            if (rb != null) { rb.linearVelocity = Vector3.zero; rb.angularVelocity = Vector3.zero; }
+        //Reached the landing area
+        if (other.CompareTag("LandingArea")) 
+        {
+            StartCoroutine(HandleSuccessSequence());
+        }
+    }
 
-            if (examManager != null) examManager.HandleFailure(); 
+    private IEnumerator HandleSuccessSequence()
+    {
+        isMissionOver = true; // Lock the triggers
+        
+        // UI Management
+        if (statusText != null) statusText.SetActive(false); // Hide "Safe Zone"
+        if (successText != null) successText.SetActive(true); // Show "Mission Completed"
+        
+        // Stop the aircraft
+        if (rb != null) { rb.linearVelocity = Vector3.zero; rb.angularVelocity = Vector3.zero; }
+
+        yield return new WaitForSeconds(4.0f); // Display time
+
+        // Restart Loop
+        ResetAircraft();
+        if (successText != null) successText.SetActive(false);
+        if (statusText != null) statusText.SetActive(true);
+        isMissionOver = false;
+    }
+
+    private IEnumerator HandleHitSequence()
+    {
+        if (hitAudioSource != null) hitAudioSource.Play();
+        if (failureText != null) failureText.SetActive(true);
+        
+        yield return new WaitForSeconds(1.5f);
+
+        ResetAircraft();
+        if (failureText != null) failureText.SetActive(false);
+        isMissionOver = false;
+    }
+
+    // Helper method 
+    private void ResetAircraft()
+    {
+        transform.position = respawnPoint.position;
+        transform.rotation = respawnPoint.rotation;
+
+        if (rb != null) 
+        { 
+            rb.linearVelocity = Vector3.zero; 
+            rb.angularVelocity = Vector3.zero; 
         }
     }
 }
